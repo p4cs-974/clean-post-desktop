@@ -12,6 +12,13 @@ export function ThemeSwitch() {
     setMounted(true);
   }, []);
 
+  // Auto-reset animation state with proper cleanup
+  useEffect(() => {
+    if (!isAnimating) return;
+    const timer = setTimeout(() => setIsAnimating(false), 400);
+    return () => clearTimeout(timer);
+  }, [isAnimating]);
+
   if (!mounted) {
     return (
       <div className="h-10 w-10 rounded-xl border border-border/40 bg-muted/30" />
@@ -19,14 +26,6 @@ export function ThemeSwitch() {
   }
 
   const isDark = theme === "dark";
-  const isSystem = theme === "system";
-
-  // Auto-reset animation state with proper cleanup
-  useEffect(() => {
-    if (!isAnimating) return;
-    const timer = setTimeout(() => setIsAnimating(false), 400);
-    return () => clearTimeout(timer);
-  }, [isAnimating]);
 
   const handleToggle = () => {
     setIsAnimating(true);

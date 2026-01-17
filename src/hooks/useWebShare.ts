@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react'
-import { getPlatformInfo } from '@/lib/utils'
 
 interface ShareData {
   files: File[]

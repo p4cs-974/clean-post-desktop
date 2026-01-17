@@ -10,7 +10,7 @@ export const BatchActions = memo(function BatchActions() {
   const processAll = useFileStore((state) => state.processAll)
   const clearCompleted = useFileStore((state) => state.clearCompleted)
   const ffmpegStatus = useFileStore((state) => state.ffmpegStatus)
-  const { smartDownload, platform } = useSmartDownload()
+  const { smartDownload } = useSmartDownload()
 
   const idleCount = files.filter((f) => f.status === 'idle').length
   const completedCount = files.filter((f) => f.status === 'completed').length

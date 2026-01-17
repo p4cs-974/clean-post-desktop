@@ -29,6 +29,7 @@
     "react-dom": "^19.1.0",
     "react-leaflet": "^5.0.0",
     "react-leaflet-markercluster": "^5.0.0-rc.0",
+    "vibe-kanban-web-companion": "^0.0.5",
     "zustand": "^5.0.2"
   },
   "devDependencies": {
