@@ -19,7 +19,6 @@ export function ThemeSwitch() {
   }
 
   const isDark = theme === "dark";
-  const isSystem = theme === "system";
 
   // Auto-reset animation state with proper cleanup
   useEffect(() => {

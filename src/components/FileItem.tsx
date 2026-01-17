@@ -22,7 +22,7 @@ interface FileItemProps {
 }
 
 export const FileItem = memo(function FileItem({ file, onProcess, onRemove }: FileItemProps) {
-  const { smartDownload, platform } = useSmartDownload();
+  const { smartDownload } = useSmartDownload();
 
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return bytes + " B";

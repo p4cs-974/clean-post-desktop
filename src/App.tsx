@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { Shield } from "lucide-react";
 import { useFileStore } from "@/store/fileStore";
 import { useShallow } from "zustand/react/shallow";
 import { FileUpload } from "@/components/FileUpload";
@@ -20,6 +19,7 @@ import {
   generateImageThumbnail,
   generateVideoThumbnail,
 } from "@/lib/metadata/metadataReader";
+import { VibeKanbanWebCompanion } from "vibe-kanban-web-companion";
 
 function App() {
   const {
@@ -190,6 +190,9 @@ function App() {
 
   return (
     <div className="min-h-screen bg-background relative">
+      {/* Vibe Kanban Web Companion */}
+      <VibeKanbanWebCompanion />
+
       {/* Header */}
       <header className="sticky top-0 z-50 safe-area-header">
         <div className="container mx-auto max-w-2xl px-4 pt-4 pb-4">
