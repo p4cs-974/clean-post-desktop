@@ -1,0 +1,8 @@
+{
+  "functions": "convex/functions",
+  "schema": "convex/schema.ts",
+  "auth": { "resources": [] },
+  "node": {
+    "external": {}
+  }
+}
