@@ -10,9 +10,46 @@ import { processImage } from '@/lib/processors/imageProcessor'
 import { processVideo } from '@/lib/processors/videoProcessor'
 import { getFFmpegInstance } from '@/hooks/useFFmpeg'
 
+// Global Convex client reference (will be set by the component)
+let convexClient: any = null
+
+export function setConvexClient(client: any) {
+  convexClient = client
+}
+
 // Helper to determine media type
 function getMediaType(file: File): MediaType {
   return file.type.startsWith('image/') ? MediaType.Image : MediaType.Video
+}
+
+// Helper to record usage stats to Convex
+async function recordUsageStat(file: FileState): Promise<void> {
+  if (!convexClient) {
+    console.warn('Convex client not initialized, skipping stats recording')
+    return
+  }
+
+  try {
+    await convexClient.mutation('usageStats:recordUsage', {
+      fileName: file.originalName,
+      fileType: file.file.type,
+      mediaType: file.mediaType,
+      fileSize: file.file.size,
+      processedSize: file.processedBlob?.size ?? file.file.size,
+      hadExif: file.metadata?.hasExif ?? false,
+      hadGPS: file.metadata?.hasGPS ?? false,
+      hadTimestamps: file.metadata?.hasTimestamps ?? false,
+      privacyRiskScore: file.metadata?.privacyRiskScore,
+      removedExif: file.options.removeExif,
+      removedGPS: file.options.removeGPS,
+      removedTimestamps: file.options.removeTimestamps,
+      status: file.status === FileStatus.Completed ? 'completed' : 'error',
+      errorMessage: file.error,
+    })
+  } catch (error) {
+    console.error('Failed to record usage stat:', error)
+    // Don't throw - we don't want to block the UI if stats recording fails
+  }
 }
 
 // Initial state
@@ -56,13 +93,21 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
       if (file?.thumbnail) {
         URL.revokeObjectURL(file.thumbnail)
       }
+      // Record usage stat if file was processed or had an error
+      if (file && (file.status === FileStatus.Completed || file.status === FileStatus.Error)) {
+        recordUsageStat(file)
+      }
       return { files: state.files.filter((f) => f.id !== id) }
     })
   },
 
   clearAll: () => {
     const { files } = get()
+    // Record usage stats for completed or error files before clearing
     files.forEach((file) => {
+      if (file.status === FileStatus.Completed || file.status === FileStatus.Error) {
+        recordUsageStat(file)
+      }
       if (file.thumbnail) {
         URL.revokeObjectURL(file.thumbnail)
       }
@@ -72,8 +117,12 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
 
   clearCompleted: () => {
     const { files } = get()
+    // Record usage stats for completed files before clearing
     files.forEach((file) => {
-      if (file.status === FileStatus.Completed && file.thumbnail) {
+      if (file.status === FileStatus.Completed) {
+        recordUsageStat(file)
+      }
+      if (file.thumbnail) {
         URL.revokeObjectURL(file.thumbnail)
       }
     })

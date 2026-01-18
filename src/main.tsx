@@ -4,9 +4,13 @@ import { ThemeProvider } from 'next-themes'
 import { ConvexProvider, ConvexReactClient } from 'convex/react'
 import './index.css'
 import App from './App'
+import { setConvexClient } from './store/fileStore'
 
 // Initialize Convex client
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL!)
+
+// Set the Convex client for usage stats tracking
+setConvexClient(convex)
 
 // Register service worker for PWA
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
