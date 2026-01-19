@@ -1,7 +1,9 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { ThemeProvider } from 'next-themes'
-import { ConvexProvider, ConvexReactClient } from 'convex/react'
+import { ClerkProvider, useAuth } from '@clerk/clerk-react'
+import { ConvexReactClient } from 'convex/react'
+import { ConvexProviderWithClerk } from 'convex/react-clerk'
 import './index.css'
 import App from './App'
 
@@ -17,10 +19,12 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ConvexProvider client={convex}>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange={false}>
-        <App />
-      </ThemeProvider>
-    </ConvexProvider>
+    <ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY!}>
+      <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange={false}>
+          <App />
+        </ThemeProvider>
+      </ConvexProviderWithClerk>
+    </ClerkProvider>
   </StrictMode>,
 )

@@ -1,4 +1,4 @@
-import { memo, useState } from 'react'
+import { memo, useState, lazy, Suspense } from 'react'
 import {
   ChevronDown,
   ChevronUp,
@@ -12,9 +12,13 @@ import {
 } from 'lucide-react'
 import { Badge } from './ui/badge'
 import { Separator } from './ui/separator'
-import { LocationMap } from './ui/location-map'
 import type { MetadataInfo, GPSInfo, DeviceInfo, CameraSettings, TimestampInfo, MetadataRemovalOptions } from '@/types'
 import { cn } from '@/lib/utils'
+
+// Lazy load Leaflet map component (bundle-defer-third-party)
+const LocationMap = lazy(() =>
+  import('./ui/location-map').then((m) => ({ default: m.LocationMap }))
+)
 
 interface MetadataPreviewProps {
   metadata: MetadataInfo
@@ -141,8 +145,8 @@ export const MetadataPreview = memo(function MetadataPreview({ metadata, isClean
   )
 })
 
-// Quick badge for collapsed view
-function QuickBadge({ type, isClean }: { type: 'gps' | 'device' | 'timestamp'; isClean: boolean }) {
+// Quick badge for collapsed view - memoized (rerender-memo)
+const QuickBadge = memo(function QuickBadge({ type, isClean }: { type: 'gps' | 'device' | 'timestamp'; isClean: boolean }) {
   const config = {
     gps: {
       icon: MapPin,
@@ -175,11 +179,21 @@ function QuickBadge({ type, isClean }: { type: 'gps' | 'device' | 'timestamp'; i
       <span>{label}</span>
     </Badge>
   )
+})
+
+// Map loading fallback
+function MapFallback() {
+  return (
+    <div className="w-full h-36 bg-neutral-800 rounded-lg flex items-center justify-center">
+      <span className="text-neutral-400 text-sm">Loading map...</span>
+    </div>
+  )
 }
 
-// Interactive map preview using Leaflet
-function MapPreview({ lat, lng, isClean }: { lat: number; lng: number; isClean: boolean }) {
-  const linkUrl = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}&zoom=15`
+// Interactive map preview using Leaflet - memoized (rerender-memo)
+const MapPreview = memo(function MapPreview({ lat, lng, isClean }: { lat: number; lng: number; isClean: boolean }) {
+  // Reduce coordinate precision (rendering-svg-precision adapted for coords)
+  const linkUrl = `https://www.openstreetmap.org/?mlat=${lat.toFixed(4)}&mlon=${lng.toFixed(4)}&zoom=15`
 
   return (
     <div className={cn(
@@ -196,7 +210,10 @@ function MapPreview({ lat, lng, isClean }: { lat: number; lng: number; isClean: 
           'relative w-full h-36',
           isClean && 'opacity-40 grayscale'
         )}>
-          <LocationMap lat={lat} lng={lng} className="rounded-lg" />
+          {/* Lazy load map with Suspense (async-suspense-boundaries) */}
+          <Suspense fallback={<MapFallback />}>
+            <LocationMap lat={lat} lng={lng} className="rounded-lg" />
+          </Suspense>
         </div>
         {/* Click to open label */}
         <div className="absolute bottom-2 right-2 z-[1000]">
@@ -215,10 +232,10 @@ function MapPreview({ lat, lng, isClean }: { lat: number; lng: number; isClean: 
       )}
     </div>
   )
-}
+})
 
-// GPS Section
-function GPSSection({ gps, isClean }: { gps: GPSInfo; isClean: boolean }) {
+// GPS Section - memoized (rerender-memo)
+const GPSSection = memo(function GPSSection({ gps, isClean }: { gps: GPSInfo; isClean: boolean }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -260,10 +277,10 @@ function GPSSection({ gps, isClean }: { gps: GPSInfo; isClean: boolean }) {
       )}
     </div>
   )
-}
+})
 
-// Device Section
-function DeviceSection({ device, isClean }: { device: DeviceInfo; isClean: boolean }) {
+// Device Section - memoized (rerender-memo)
+const DeviceSection = memo(function DeviceSection({ device, isClean }: { device: DeviceInfo; isClean: boolean }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
@@ -282,10 +299,10 @@ function DeviceSection({ device, isClean }: { device: DeviceInfo; isClean: boole
       </div>
     </div>
   )
-}
+})
 
-// Camera Settings Section
-function CameraSection({ camera, isClean }: { camera: CameraSettings; isClean: boolean }) {
+// Camera Settings Section - memoized (rerender-memo)
+const CameraSection = memo(function CameraSection({ camera, isClean }: { camera: CameraSettings; isClean: boolean }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
@@ -302,10 +319,10 @@ function CameraSection({ camera, isClean }: { camera: CameraSettings; isClean: b
       </div>
     </div>
   )
-}
+})
 
-// Timestamp Section
-function TimestampSection({ timestamps, isClean }: { timestamps: TimestampInfo; isClean: boolean }) {
+// Timestamp Section - memoized (rerender-memo)
+const TimestampSection = memo(function TimestampSection({ timestamps, isClean }: { timestamps: TimestampInfo; isClean: boolean }) {
   const formatDate = (date?: Date) => {
     if (!date) return null
     return new Intl.DateTimeFormat('en-US', {
@@ -334,10 +351,10 @@ function TimestampSection({ timestamps, isClean }: { timestamps: TimestampInfo; 
       </div>
     </div>
   )
-}
+})
 
-// Utility components
-function MetadataRow({
+// Utility components - memoized (rerender-memo)
+const MetadataRow = memo(function MetadataRow({
   label,
   value,
   isClean,
@@ -354,9 +371,9 @@ function MetadataRow({
       </span>
     </div>
   )
-}
+})
 
-function SettingBadge({ label, isClean }: { label: string; isClean: boolean }) {
+const SettingBadge = memo(function SettingBadge({ label, isClean }: { label: string; isClean: boolean }) {
   return (
     <span
       className={cn(
@@ -367,7 +384,7 @@ function SettingBadge({ label, isClean }: { label: string; isClean: boolean }) {
       {label}
     </span>
   )
-}
+})
 
 function getRiskLabel(score: number): string {
   if (score >= 7) return 'High'
