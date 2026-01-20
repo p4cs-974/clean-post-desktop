@@ -212,7 +212,7 @@ const MapPreview = memo(function MapPreview({ lat, lng, isClean }: { lat: number
         )}>
           {/* Lazy load map with Suspense (async-suspense-boundaries) */}
           <Suspense fallback={<MapFallback />}>
-            <LocationMap lat={lat} lng={lng} className="rounded-lg" />
+            <LocationMap lat={lat} lng={lng} isClean={isClean} className="rounded-lg" />
           </Suspense>
         </div>
         {/* Click to open label */}
