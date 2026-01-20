@@ -1,6 +1,5 @@
-import { memo, useEffect, useState } from 'react'
-import { MapContainer, TileLayer, Marker } from 'react-leaflet'
-import type { LatLngExpression } from 'leaflet'
+import { memo, useEffect, useRef, useId } from 'react'
+import { cn } from '@/lib/utils'
 import 'leaflet/dist/leaflet.css'
 
 interface LocationMapProps {
@@ -10,44 +9,64 @@ interface LocationMapProps {
 }
 
 export const LocationMap = memo(function LocationMap({ lat, lng, className }: LocationMapProps) {
-  const [L, setL] = useState<typeof import('leaflet') | null>(null)
-  const position: LatLngExpression = [lat, lng]
+  const uniqueId = useId()
+  const mapRef = useRef<L.Map | null>(null)
+  const initializedRef = useRef(false)
 
-  // Load leaflet dynamically for icon fix
   useEffect(() => {
-    import('leaflet').then((leaflet) => {
-      // Fix default marker icon issue with bundlers
-      delete (leaflet.Icon.Default.prototype as any)._getIconUrl
-      leaflet.Icon.Default.mergeOptions({
-        iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-      })
-      setL(leaflet)
-    })
-  }, [])
+    // Prevent double initialization from StrictMode/HMR
+    if (initializedRef.current) return
+    initializedRef.current = true
 
-  if (!L) {
-    return (
-      <div className={`bg-neutral-800 animate-pulse rounded-lg ${className}`} />
-    )
-  }
+    const container = document.getElementById(uniqueId)
+    if (!container) return
+
+    import('leaflet').then((L) => {
+      // Double check container still exists and map not created
+      if (!document.getElementById(uniqueId)) return
+      if (mapRef.current) return
+
+      const map = L.map(container, {
+        center: [lat, lng],
+        zoom: 15,
+        zoomControl: false,
+        attributionControl: false,
+        scrollWheelZoom: false,
+        dragging: false,
+      })
+
+      // Use Stadia Maps which supports CORS properly
+      L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
+        crossOrigin: 'anonymous',
+      }).addTo(map)
+
+      const icon = L.divIcon({
+        html: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 24],
+        className: 'bg-transparent border-none',
+      })
+
+      L.marker([lat, lng], { icon }).addTo(map)
+
+      mapRef.current = map
+
+      setTimeout(() => map.invalidateSize(), 100)
+    })
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+      }
+      initializedRef.current = false
+    }
+  }, [lat, lng, uniqueId])
 
   return (
-    <MapContainer
-      center={position}
-      zoom={14}
-      scrollWheelZoom={false}
-      dragging={false}
-      zoomControl={false}
-      attributionControl={false}
-      className={className}
-      style={{ height: '100%', width: '100%' }}
-    >
-      <TileLayer
-        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-      />
-      <Marker position={position} />
-    </MapContainer>
+    <div
+      id={uniqueId}
+      className={cn('h-full w-full', className)}
+    />
   )
 })
