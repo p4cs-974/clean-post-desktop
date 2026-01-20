@@ -14,8 +14,8 @@ function MapMarker({ isClean, className }: { isClean: boolean; className?: strin
 
   return (
     <svg
-      width="32"
-      height="42"
+      width="24"
+      height="32"
       viewBox="0 0 32 42"
       className={cn('drop-shadow-lg', className)}
       style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
