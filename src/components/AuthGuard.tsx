@@ -16,7 +16,7 @@ import { api } from "../../convex/_generated/api";
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const user = useQuery(api.users.getCurrentUser);
   const ensureUser = useMutation(api.users.getOrCreateUser);
-  const { isAnonymous, setAnonymous } = useAnonymous();
+  const { isAnonymous, setAnonymous, clearAnonymous } = useAnonymous();
   // Use ref to track if mutation has been called (async-api-routes fix)
   const hasCalled = useRef(false);
 
@@ -34,12 +34,18 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    // If user is authenticated, clear anonymous state from localStorage
+    if (user !== null && isAnonymous) {
+      clearAnonymous();
+      return;
+    }
+
     if (user === null && !hasCalled.current) {
       // User doesn't exist yet, create them (only once)
       hasCalled.current = true;
       ensureUser();
     }
-  }, [user, ensureUser]);
+  }, [user, ensureUser, isAnonymous, clearAnonymous]);
 
   // If anonymous, show app without auth requirement (must be after all hooks)
   if (isAnonymous) {
