@@ -3,6 +3,8 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { motion } from "motion/react";
 import { File, MapPin, Camera, Clock, Shield, TrendingUp, LucideIcon } from "lucide-react";
+import { SignInButton } from "@clerk/clerk-react";
+import { useAnonymous } from "../contexts/AnonymousContext";
 
 // Stats config hoisted outside component (rendering-hoist-jsx)
 interface StatConfig {
@@ -46,6 +48,48 @@ const STATS_CONFIG: readonly StatConfig[] = [
 
 export function UserStats() {
   const user = useQuery(api.users.getCurrentUser);
+  const { isAnonymous } = useAnonymous();
+
+  // Don't show stats for anonymous users
+  if (isAnonymous) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="text-center py-8 space-y-4"
+      >
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="inline-flex"
+        >
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl blur-xl" />
+            <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20">
+              <Shield className="h-8 w-8 text-primary" />
+            </div>
+          </div>
+        </motion.div>
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold">Sign in to see your stats</h3>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
+            Track how many files you've cleaned and see your privacy impact
+          </p>
+          <SignInButton mode="modal">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="mt-4 px-6 py-2 rounded-xl bg-primary text-primary-foreground font-medium text-sm"
+            >
+              Sign In
+            </motion.button>
+          </SignInButton>
+        </div>
+      </motion.div>
+    );
+  }
 
   // Memoize stats with actual values (rerender-derived-state)
   const stats = useMemo(() => {

@@ -6,7 +6,7 @@ import {
   Suspense,
 } from "react";
 import { Settings } from "lucide-react";
-import { UserButton } from "@clerk/clerk-react";
+import { UserButton, SignInButton } from "@clerk/clerk-react";
 import { useFileStore } from "@/store/fileStore";
 import { useMutation } from "convex/react";
 import { FileUpload } from "@/components/FileUpload";
@@ -16,6 +16,7 @@ import { BatchActions } from "@/components/BatchActions";
 import { ProgressiveBlur } from "@/components/ui/progressive-blur";
 import { ThemeSwitch } from "@/components/ThemeSwitch";
 import { AuthGuard } from "@/components/AuthGuard";
+import { useAnonymous } from "@/contexts/AnonymousContext";
 import { UserStats } from "@/components/UserStats";
 import { processImage } from "@/lib/processors/imageProcessor";
 import { processVideo } from "@/lib/processors/videoProcessor";
@@ -46,6 +47,8 @@ const PWAUpdatePrompt = lazy(() =>
 );
 
 function App() {
+  const { isAnonymous } = useAnonymous();
+
   // Split selectors for better re-render optimization (rerender-lazy-state-init)
   const files = useFileStore((state) => state.files);
   const globalOptions = useFileStore((state) => state.globalOptions);
@@ -244,14 +247,22 @@ function App() {
                 >
                   <Settings className="h-5 w-5" />
                 </button>
-                <UserButton
-                  appearance={{
-                    elements: {
-                      avatarBox: "h-9 w-9",
-                    },
-                  }}
-                  afterSignOutUrl="/"
-                />
+                {isAnonymous ? (
+                  <SignInButton mode="modal">
+                    <button className="text-sm text-muted-foreground hover:text-foreground transition-colors px-3 py-2">
+                      Sign in
+                    </button>
+                  </SignInButton>
+                ) : (
+                  <UserButton
+                    appearance={{
+                      elements: {
+                        avatarBox: "h-9 w-9",
+                      },
+                    }}
+                    afterSignOutUrl="/"
+                  />
+                )}
                 <ThemeSwitch />
               </div>
             </div>

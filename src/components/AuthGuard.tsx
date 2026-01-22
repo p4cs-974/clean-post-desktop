@@ -10,13 +10,22 @@ import {
 import { motion } from "motion/react";
 import { useEffect, useRef } from "react";
 import { UsageConsentModal } from "./UsageConsentModal";
+import { useAnonymous } from "../contexts/AnonymousContext";
 import { api } from "../../convex/_generated/api";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const user = useQuery(api.users.getCurrentUser);
   const ensureUser = useMutation(api.users.getOrCreateUser);
+  const { isAnonymous, setAnonymous } = useAnonymous();
   // Use ref to track if mutation has been called (async-api-routes fix)
   const hasCalled = useRef(false);
+
+  // Handle anonymous sign in
+  const handleAnonymousSignIn = () => {
+    // Generate a unique anonymous ID
+    const anonymousId = `anon_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+    setAnonymous(anonymousId);
+  };
 
   // Ensure user exists when authenticated
   useEffect(() => {
@@ -31,6 +40,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       ensureUser();
     }
   }, [user, ensureUser]);
+
+  // If anonymous, show app without auth requirement (must be after all hooks)
+  if (isAnonymous) {
+    return <>{children}</>;
+  }
 
   return (
     <>
@@ -198,6 +212,17 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
                       </div>
                     </motion.button>
                   </SignInButton>
+
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleAnonymousSignIn}
+                    className="relative w-full group mt-3"
+                  >
+                    <div className="relative px-8 py-4 rounded-2xl bg-muted hover:bg-muted/80 text-foreground font-medium text-base border border-border transition-colors">
+                      Use anonymously
+                    </div>
+                  </motion.button>
 
                   <div className="mt-6 pt-6 border-t border-border/50">
                     <div className="flex items-center justify-center gap-6 text-xs text-muted-foreground">
